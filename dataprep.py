@@ -200,6 +200,21 @@ X_cols = [x for x in df_std_drop.columns if x not in ['target'] ]
 df_X = df_norm_drop[X_cols].copy()
 calculate_vif(df_X)
 
+##### CENTER THE CATEGORICAL VARIABLES IN STANDARDIZED DATA TO BE FROM [-.5,.5] by subtracting -.5
+std_cont_vars = ['trestbps','chol','thalach','age','target']
+
+# FOR ONE HOT DROP VERSION
+cat_cols = [x for x in df_std_drop.columns if x not in std_cont_vars]
+for var in cat_cols:
+    x = df_std_drop[var]-0.5
+    df_std_drop[var] = x
+
+# FOR WITHOUT DROP VERSION
+cat_cols = [x for x in df_std.columns if x not in std_cont_vars]
+for var in cat_cols:
+    x = df_std[var]-0.5
+    df_std[var] = x
+
 ### PCA
 
 ########### OUTPUT CLEANED DATA ######################################

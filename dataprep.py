@@ -33,6 +33,8 @@ def get_accuracy(y_test,predictions):
 
 df = pd.read_csv('datasets_33180_43520_heart.csv')
 
+############## TREAT MISSING VALUES IF ANY  ####################################################
+
 # Check for NaNs, returns False
 anyNan = df.isnull().values.any()
 
@@ -45,11 +47,25 @@ thal_mode = int(df['thal'].mode())
 condition_thal_zero = df['thal']==0
 df['thal'].replace({0:thal_mode},inplace=True)
 
-## Reorder categorical var for slope so that it is ordinal
-##  slope: the slope of the peak exercise ST segment
+
+############## NORMALIZE (MinMax) Categorical Ordinal Variables ###################
+
+# TODO
+# Reorder categorical var for slope so that it is ordinal
+#  slope: the slope of the peak exercise ST segment
 # -- Value 1: upsloping
 # -- Value 2: flat
 # -- Value 3: downsloping
+
+cat_ordinals = ['slope','ca']
+scaler = MinMaxScaler()
+for var in cat_ordinals:
+    x = df[var]
+    x_scaled = scaler.fit_transform(x.values.reshape(-1, 1))
+    # sns.distplot(xt_scaled)
+    # plt.show()
+    df[var]=x_scaled
+
 
 ## Box - whisker plots for continuous vars
 # ax = sns.boxplot(x=df['trestbps'])
@@ -59,6 +75,12 @@ df['thal'].replace({0:thal_mode},inplace=True)
 # ax = sns.boxplot(x=df['age'])
 
 ## Remove outliers for cont vars for normalizing data
+
+## Oldpeak will be normalized so remove outliers
+df.oldpeak = np.where(df.oldpeak > 4, 4, df.oldpeak)
+# ax = sns.boxplot(x=df['oldpeak'])
+
+######## BEGIN NORMALIZING (MINMAX) CONTINUOUS VARIABLES ####################
 
 df_norm = df.copy()
 
@@ -73,12 +95,20 @@ df_norm.chol = np.where(df_norm.chol > 360, 360, df_norm.chol)
 df_norm.thalach = np.where(df_norm.thalach < 90, 90, df_norm.thalach)
 # ax = sns.boxplot(x=df_std['thalach'])
 
-df_norm.oldpeak = np.where(df_norm.oldpeak > 4, 4, df_norm.oldpeak)
+# df_norm.oldpeak = np.where(df_norm.oldpeak > 4, 4, df_norm.oldpeak)
 # ax = sns.boxplot(x=df_std['oldpeak'])
 
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 cont_vars = ['trestbps','chol','thalach','age','oldpeak']
-categorical
+for var in cont_vars:
+    x = df_norm[var]
+    x_scaled = scaler.fit_transform(x.values.reshape(-1, 1))
+    df_norm[var]=x_scaled
+
+########## END NORMALIZING CONTINUOUS VARIABLES ###############################
+
+
+######## BEGIN STANDARDIZING (STDNORM) CONTINUOUS VARIABLES ####################
 
 ## Outliers are not required to be removed for standardizing data
 
@@ -118,11 +148,12 @@ for var in cont_vars:
     df_std[var]=xt_scaled
 
 scaler = MinMaxScaler()
-df_std['oldpeak'] = scaler.fit_transform(df_std['oldpeak'])
+df_std['oldpeak'] = scaler.fit_transform(df_std['oldpeak'].values.reshape(-1,1))
 
-# scaler = StandardScaler()
-# data_scaled = scaler.fit_transform(data)
 
+###### FINISHED STANDARDIZING CONTINUOUS VARIABLES ##################
+
+########### BEGIN ONE HOT ENCODING NORMALIZED (MINMAX) DATA #################
 
 ## Encoding
 onehotencoder = OneHotEncoder()
@@ -151,111 +182,29 @@ def calculate_vif(data):
         vif_df.loc[i] = [x_var_names[i], vif]
     return vif_df.sort_values(by = 'Vif', axis = 0, ascending=False, inplace=False)
 
-df_drop = hot_encode(df,['cp','restecg','thal'])
-df = hot_encode(df,['cp','restecg','thal'],drop=False)
-# df = hot_encode(df,'restecg')
-
-# df_cp = df[['cp_0','cp_1','cp_2','cp_3','target']]
+df_norm_drop = hot_encode(df_norm,['cp','restecg','thal'])
+df_norm = hot_encode(df_norm,['cp','restecg','thal'],drop=False)
 
 ## Check VIF
-X_cols = [x for x in df.columns if x is not 'target']
-df_X = df[X_cols].copy()
+X_cols = [x for x in df_norm_drop.columns if x not in ['target'] ]
+df_X = df_norm_drop[X_cols].copy()
 calculate_vif(df_X)
 
+########### BEGIN ONE HOT ENCODING STANDARDIZED (STDNORM) DATA #################
 
-## Normalized version
+df_std_drop = hot_encode(df_std,['cp','restecg','thal'])
+df_std = hot_encode(df_std,['cp','restecg','thal'],drop=False)
 
-
-### Standardized version
-
+## Check VIF
+X_cols = [x for x in df_std_drop.columns if x not in ['target'] ]
+df_X = df_norm_drop[X_cols].copy()
+calculate_vif(df_X)
 
 ### PCA
 
+########### OUTPUT CLEANED DATA ######################################
 
-#
-# # Replace and
-# df.fillna(0,inplace=True)
-#
-#
-# names = pd.read_csv('spambase/names.csv')
-# df.columns=list(names['names'])
-# n = len(df)
-#
-# X = df.iloc[:,:-1].copy()
-# Y = df.iloc[:,-1].copy()
-#
-# number_spam = sum(Y)
-# number_non_spam = n-number_spam
-# number_features = len(df.columns)-1
-#
-# depth = 3
-# clf = tree.DecisionTreeClassifier(max_depth=depth)
-# clf = clf.fit(X, Y)
-# fig = plt.figure()
-# ax = plt.axes()
-# # fig, ax = plt.subplots(figsize=(4, 6))
-# tree.plot_tree(clf.fit(X, Y), max_depth=depth, fontsize=6, class_names=['Not Spam', 'Spam'],filled=True)
-# plt.savefig('tree_high_dpi', dpi=100)
-# plt.show()
-
-
-
-# clf = tree.DecisionTreeClassifier(max_depth=4)
-# clf = clf.fit(X, Y)
-# fig, ax = plt.subplots(figsize=(8, 6))
-# tree.plot_tree(clf.fit(X, Y), max_depth=4, fontsize=10)
-# plt.show()
-
-#
-# X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-#
-# list_depths = list(range(1,20))
-# list_miss_rate = []
-# list_roc_auc_score =[]
-# for depth in list_depths:
-#     clf = tree.DecisionTreeClassifier(max_depth=depth, random_state = 42)
-#     clf = clf.fit(X_train, y_train)
-#     predictions = clf.predict(X_test)
-#     accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
-#     miss_rate = 1-total_accuracy
-#     roc_score = roc_auc_score(y_test, predictions)
-#     list_miss_rate.append(miss_rate)
-#     list_roc_auc_score.append(roc_score)
-#
-# fig = plt.figure()
-# ax = plt.axes()
-# plt.title("Decision Tree - AUC score by Tree Depth")
-# plt.plot(list_depths, list_roc_auc_score)
-# plt.show()
-#
-# fig = plt.figure()
-# ax = plt.axes()
-# plt.title("Decision Tree - Misclassification rate by Tree Depth")
-# plt.plot(list_depths, list_miss_rate)
-# plt.show()
-#
-#
-# list_depths = list(range(1,20))
-# list_miss_rate = []
-# list_roc_auc_score =[]
-# for depth in list_depths:
-#     clf = RandomForestClassifier(max_depth=depth, random_state = 42)
-#     clf = clf.fit(X_train, y_train)
-#     predictions = clf.predict(X_test)
-#     accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
-#     miss_rate = 1-total_accuracy
-#     roc_score = roc_auc_score(y_test, predictions)
-#     list_miss_rate.append(miss_rate)
-#     list_roc_auc_score.append(roc_score)
-#
-# fig = plt.figure()
-# ax = plt.axes()
-# plt.title("Random Forest - AUC score by Tree Depth")
-# plt.plot(list_depths, list_roc_auc_score)
-# plt.show()
-#
-# fig = plt.figure()
-# ax = plt.axes()
-# plt.title("Random Forest - Misclassification rate by Tree Depth")
-# plt.plot(list_depths, list_miss_rate)
-# plt.show()
+df_std_drop.to_csv('CleanedData/std_onehot_drop.csv',index=False)
+df_std.to_csv('CleanedData/std.csv',index=False)
+df_norm_drop.to_csv('CleanedData/norm_onehot_drop.csv',index=False)
+df_norm.to_csv('CleanedData/norm.csv',index=False)

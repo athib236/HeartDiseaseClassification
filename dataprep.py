@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.decomposition import PCA
 
 import statsmodels.api as sm
 import seaborn as sns
@@ -22,14 +23,6 @@ import numpy as np
 sns.set(style="whitegrid")
 from scipy import stats
 
-
-def get_accuracy(y_test,predictions):
-    result = confusion_matrix(y_test, predictions)
-    accuracy_of_0 = result[0, 0] / (result[0, 0] + result[0, 1])
-    accuracy_of_1 = result[1, 1] / (result[1, 1] + result[1, 0])
-    total_accuracy = (result[0, 0] + result[1, 1]) / sum(sum(result))
-
-    return accuracy_of_0, accuracy_of_1, total_accuracy
 
 df = pd.read_csv('datasets_33180_43520_heart.csv')
 
@@ -216,6 +209,20 @@ for var in cat_cols:
     df_std[var] = x
 
 ### PCA
+target_col = ['target']
+var_cols = [x for x in df_norm_drop.columns if x not in target_col]
+X = df_norm_drop[var_cols].copy()
+# Y = df_norm_drop[target_col].values.flatten()
+
+pca = PCA(n_components=2)
+pca.fit(X)
+print(pca.explained_variance_ratio_)
+principalComponents = pca.fit_transform(X)
+principalDf = pd.DataFrame(data = principalComponents, columns = ['PC1', 'PC2'])
+df_pca_2comp = pd.concat([principalDf, df[['target']]], axis = 1)
+
+
+
 
 ########### OUTPUT CLEANED DATA ######################################
 
@@ -223,3 +230,4 @@ df_std_drop.to_csv('CleanedData/std_onehot_drop.csv',index=False)
 df_std.to_csv('CleanedData/std.csv',index=False)
 df_norm_drop.to_csv('CleanedData/norm_onehot_drop.csv',index=False)
 df_norm.to_csv('CleanedData/norm.csv',index=False)
+df_pca_2comp.to_csv('CleanedData/pca_2comp.csv',index=False)

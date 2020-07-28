@@ -24,7 +24,7 @@ def get_accuracy(y_test,predictions):
 
     return accuracy_of_0, accuracy_of_1, total_accuracy
 
-df = pd.read_csv('datasets_33180_43520_heart.csv')
+df = pd.read_csv('../CleanedData/norm.csv')
 df.fillna(0,inplace=True)
 
 n = len(df)
@@ -71,13 +71,13 @@ fig = plt.figure()
 ax = plt.axes()
 plt.title("Decision Tree - AUC score by Tree Depth")
 plt.plot(list_depths, list_roc_auc_score)
-# plt.show()
+plt.show()
 
 fig = plt.figure()
 ax = plt.axes()
 plt.title("Decision Tree - Misclassification rate by Tree Depth")
 plt.plot(list_depths, list_miss_rate)
-# plt.show()
+plt.show()
 
 
 list_depths = list(range(1,20))
@@ -97,20 +97,21 @@ fig = plt.figure()
 ax = plt.axes()
 plt.title("Random Forest - AUC score by Tree Depth")
 plt.plot(list_depths, list_roc_auc_score)
-# plt.show()
+plt.show()
 
 fig = plt.figure()
 ax = plt.axes()
 plt.title("Random Forest - Misclassification rate by Tree Depth")
 plt.plot(list_depths, list_miss_rate)
-# plt.show()
+plt.show()
 
 no_splits=5
 cv = KFold(n_splits=no_splits, random_state=42, shuffle=True)
+
+# ### Now doing CV fold to accurately estimate accuracy
 accuracy_folds = []
 list_error = []
 
-# ### Now doing CV fold to accurately estimate accuracy
 clf = RandomForestClassifier(max_depth=4, random_state = 42)
 
 for train_index, test_index in cv.split(X):
@@ -131,6 +132,9 @@ plt.show()
 
 ##################### DECISION TREE ##############
 ### Now doing CV fold to accurately estimate accuracy
+accuracy_folds = []
+list_error = []
+
 clf = tree.DecisionTreeClassifier(max_depth=4, random_state = 42)
 
 for train_index, test_index in cv.split(X):

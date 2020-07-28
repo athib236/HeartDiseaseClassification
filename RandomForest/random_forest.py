@@ -24,7 +24,7 @@ def get_accuracy(y_test,predictions):
 
     return accuracy_of_0, accuracy_of_1, total_accuracy
 
-df = pd.read_csv('../CleanedData/norm.csv')
+df = pd.read_csv('../CleanedData/norm_train.csv')
 df.fillna(0,inplace=True)
 
 n = len(df)
@@ -152,6 +152,22 @@ plt.title("Decision Tree with Depth 4 - Accuracy rate for each fold")
 plt.plot(list(range(no_splits)),accuracy_folds)
 print("Average Decision Tree with Depth 4 accuracy is :" + str(round(np.mean(accuracy_folds),4)*100) + '%')
 plt.show()
+
+## Finally test model on testing data
+
+clf = RandomForestClassifier(max_depth=4, random_state = 42)
+clf.fit(X, Y)
+
+df_test = pd.read_csv('../CleanedData/norm_test.csv')
+
+target_col = ['target']
+var_cols = [x for x in df.columns if x not in target_col]
+X_test = df[var_cols].copy()
+Y_test = df[target_col].values.flatten()
+predictions = clf.predict(X_test)
+accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(Y_test, predictions)
+miss_rate = 1 - total_accuracy
+print("Random Forest with Depth 4 validation accuracy is :" + str(round(total_accuracy,4)*100) + '%')
 
 
 # Instantiate model with 1000 decision trees

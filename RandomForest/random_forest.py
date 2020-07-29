@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn import neighbors
 import numpy as np
+from itertools import product
+import seaborn as sns
 
 def get_accuracy(y_test,predictions):
     result = confusion_matrix(y_test, predictions)
@@ -34,8 +36,12 @@ X = df[var_cols].copy()
 Y = df[target_col].values.flatten()
 
 number_cardiac_case = sum(Y)
-number_non_spam = n - number_cardiac_case
+number_non_cardiac_cases = n - number_cardiac_case
 number_features = len(df.columns)-1
+
+print("Number of cardiac cases is " + str(number_cardiac_case))
+print("Number of non-cardiac cases is " + str(number_non_cardiac_cases))
+
 
 depth = 4
 clf = tree.DecisionTreeClassifier(max_depth=depth)
@@ -52,60 +58,60 @@ plt.show()
 # tree.plot_tree(clf.fit(X, Y), max_depth=4, fontsize=10)
 # plt.show()
 
-X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+# X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+#
+# list_depths = list(range(1,20))
+# list_miss_rate = []
+# list_roc_auc_score =[]
+# for depth in list_depths:
+#     clf = tree.DecisionTreeClassifier(max_depth=depth, random_state = 42)
+#     clf = clf.fit(X_train, y_train)
+#     predictions = clf.predict(X_test)
+#     accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
+#     miss_rate = 1-total_accuracy
+#     roc_score = roc_auc_score(y_test, predictions)
+#     list_miss_rate.append(miss_rate)
+#     list_roc_auc_score.append(roc_score)
+#
+# fig = plt.figure()
+# ax = plt.axes()
+# plt.title("Decision Tree - AUC score by Tree Depth")
+# plt.plot(list_depths, list_roc_auc_score)
+# plt.show()
+#
+# fig = plt.figure()
+# ax = plt.axes()
+# plt.title("Decision Tree - Misclassification rate by Tree Depth")
+# plt.plot(list_depths, list_miss_rate)
+# plt.show()
+#
+#
+# list_depths = list(range(1,20))
+# list_miss_rate = []
+# list_roc_auc_score =[]
+# for depth in list_depths:
+#     clf = RandomForestClassifier(max_depth=depth, random_state = 42)
+#     clf = clf.fit(X_train, y_train)
+#     predictions = clf.predict(X_test)
+#     accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
+#     miss_rate = 1-total_accuracy
+#     roc_score = roc_auc_score(y_test, predictions)
+#     list_miss_rate.append(miss_rate)
+#     list_roc_auc_score.append(roc_score)
+#
+# fig = plt.figure()
+# ax = plt.axes()
+# plt.title("Random Forest - AUC score by Tree Depth")
+# plt.plot(list_depths, list_roc_auc_score)
+# plt.show()
+#
+# fig = plt.figure()
+# ax = plt.axes()
+# plt.title("Random Forest - Misclassification rate by Tree Depth")
+# plt.plot(list_depths, list_miss_rate)
+# plt.show()
 
-list_depths = list(range(1,20))
-list_miss_rate = []
-list_roc_auc_score =[]
-for depth in list_depths:
-    clf = tree.DecisionTreeClassifier(max_depth=depth, random_state = 42)
-    clf = clf.fit(X_train, y_train)
-    predictions = clf.predict(X_test)
-    accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
-    miss_rate = 1-total_accuracy
-    roc_score = roc_auc_score(y_test, predictions)
-    list_miss_rate.append(miss_rate)
-    list_roc_auc_score.append(roc_score)
-
-fig = plt.figure()
-ax = plt.axes()
-plt.title("Decision Tree - AUC score by Tree Depth")
-plt.plot(list_depths, list_roc_auc_score)
-plt.show()
-
-fig = plt.figure()
-ax = plt.axes()
-plt.title("Decision Tree - Misclassification rate by Tree Depth")
-plt.plot(list_depths, list_miss_rate)
-plt.show()
-
-
-list_depths = list(range(1,20))
-list_miss_rate = []
-list_roc_auc_score =[]
-for depth in list_depths:
-    clf = RandomForestClassifier(max_depth=depth, random_state = 42)
-    clf = clf.fit(X_train, y_train)
-    predictions = clf.predict(X_test)
-    accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(y_test, predictions)
-    miss_rate = 1-total_accuracy
-    roc_score = roc_auc_score(y_test, predictions)
-    list_miss_rate.append(miss_rate)
-    list_roc_auc_score.append(roc_score)
-
-fig = plt.figure()
-ax = plt.axes()
-plt.title("Random Forest - AUC score by Tree Depth")
-plt.plot(list_depths, list_roc_auc_score)
-plt.show()
-
-fig = plt.figure()
-ax = plt.axes()
-plt.title("Random Forest - Misclassification rate by Tree Depth")
-plt.plot(list_depths, list_miss_rate)
-plt.show()
-
-no_splits=5
+no_splits=10
 cv = KFold(n_splits=no_splits, random_state=42, shuffle=True)
 
 # ### Now doing CV fold to accurately estimate accuracy
@@ -130,7 +136,7 @@ plt.plot(list(range(no_splits)),accuracy_folds)
 print("Average Random Forest with Depth 4 accuracy is :" + str(round(np.mean(accuracy_folds),4)*100) + '%')
 plt.show()
 
-##################### DECISION TREE ##############
+#################### DECISION TREE ##############
 ### Now doing CV fold to accurately estimate accuracy
 accuracy_folds = []
 list_error = []
@@ -161,18 +167,118 @@ clf.fit(X, Y)
 df_test = pd.read_csv('../CleanedData/norm_test.csv')
 
 target_col = ['target']
-var_cols = [x for x in df.columns if x not in target_col]
-X_test = df[var_cols].copy()
-Y_test = df[target_col].values.flatten()
+var_cols = [x for x in df_test.columns if x not in target_col]
+X_test = df_test[var_cols].copy()
+Y_test = df_test[target_col].values.flatten()
 predictions = clf.predict(X_test)
 accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(Y_test, predictions)
 miss_rate = 1 - total_accuracy
-print("Random Forest with Depth 4 validation accuracy is :" + str(round(total_accuracy,4)*100) + '%')
+roc = roc_auc_score(Y_test, predictions)
+print("Random Forest with Depth 4 testing accuracy is :" + str(round(total_accuracy,4)*100) + '%')
+print("Random Forest with Depth 4 roc score is :" + str(round(roc,4)*100) + '%')
+
+x_axis_labels = ['No Heart Disease','Heart Disease']
+y_axis_labels = ['No Heart Disease','Heart Disease']
+cf_matrix = confusion_matrix(Y_test, predictions)
+sns.heatmap(cf_matrix, annot=True, xticklabels=x_axis_labels, yticklabels=y_axis_labels)
+plt.ylabel('True class')
+plt.xlabel('Predicted class')
+plt.title('Confusion Matrix for Random Forest Testing')
+plt.show()
+
+### Check data this for our decision tree as well
+clf = tree.DecisionTreeClassifier(max_depth=4, random_state = 42)
+
+clf.fit(X, Y)
+
+df_test = pd.read_csv('../CleanedData/norm_test.csv')
+
+target_col = ['target']
+var_cols = [x for x in df_test.columns if x not in target_col]
+X_test = df_test[var_cols].copy()
+Y_test = df_test[target_col].values.flatten()
+predictions = clf.predict(X_test)
+accuracy_of_0, accuracy_of_1, total_accuracy = get_accuracy(Y_test, predictions)
+miss_rate = 1 - total_accuracy
+roc = roc_auc_score(Y_test, predictions)
+print("Decision Tree with Depth 4 testing accuracy is :" + str(round(total_accuracy,4)*100) + '%')
+print("Decision Tree Forest with Depth 4 roc score is :" + str(round(roc,4)*100) + '%')
+
+x_axis_labels = ['No Heart Disease','Heart Disease']
+y_axis_labels = ['No Heart Disease','Heart Disease']
+cf_matrix = confusion_matrix(Y_test, predictions)
+sns.heatmap(cf_matrix, annot=True, xticklabels=x_axis_labels, yticklabels=y_axis_labels)
+plt.ylabel('True class')
+plt.xlabel('Predicted class')
+plt.title('Confusion Matrix for Decision Tree Testing')
+plt.show()
 
 
-# Instantiate model with 1000 decision trees
-# rf = RandomForestClassifier(max_depth=4, random_state = 42)
-# rf.fit(X_train, y_train)
-# predictions = rf.predict(X_test)
-#
-# get_accuracy(y_test, predictions)
+## Finally plot decision boundary using model trained from 2 most key variables from logistic regression
+df = pd.read_csv('../CleanedData/norm_train.csv')
+df.fillna(0,inplace=True)
+
+n = len(df)
+target_col = ['target']
+var_cols = ['thalach','ca']
+X = df[var_cols].copy()
+Y = df[target_col]
+
+X_test = df_test[['thalach','ca']].copy()
+Y_test = df_test[target_col].copy()
+Y=Y.values.flatten()
+
+clf = RandomForestClassifier(max_depth=2, random_state = 42)
+clf.fit(X, Y)
+X = X.to_numpy()
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1), np.arange(y_min, y_max, 0.1))
+
+# f, axarr = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(10, 8))
+fig = plt.figure()
+ax = plt.axes()
+
+# for idx, clf, tt in zip(product([0], [0]), [clf], ['RandomForest']):
+
+Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+ax.contourf(xx, yy, Z, alpha=0.4)
+ax.scatter(X[:, 0], X[:, 1], c=Y, s=20, edgecolor='k')
+ax.set_title('Random Forest Decision Boundary with depth 2')
+plt.xlabel('thalach', fontsize=12)
+plt.ylabel('ca', fontsize=12)
+
+plt.show()
+
+
+
+## Finally show decision boundary for decision tree
+
+clf = tree.DecisionTreeClassifier(max_depth=2, random_state = 42)
+clf.fit(X, Y)
+
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1), np.arange(y_min, y_max, 0.1))
+
+# f, axarr = plt.subplots(1, 1, sharex='col', sharey='row', figsize=(10, 8))
+fig = plt.figure()
+ax = plt.axes()
+
+# for idx, clf, tt in zip(product([0], [0]), [clf], ['RandomForest']):
+
+Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+ax.contourf(xx, yy, Z, alpha=0.4)
+ax.scatter(X[:, 0], X[:, 1], c=Y, s=20, edgecolor='k')
+ax.set_title('Decision Tree Decision Boundary with depth 2')
+plt.xlabel('thalach', fontsize=12)
+plt.ylabel('ca', fontsize=12)
+
+plt.show()
+
